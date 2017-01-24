@@ -74,8 +74,8 @@ Need to take one sided limits at r=0 and r=1
 
 The surface is discretized using flat triangles.
 
-<img src="nomesh.png" width="350" height="350" />
-<img src="mesh.png" width="350" height="350" />
+<img src="nomesh1.png" width="350" height="350" />
+<img src="mesh1.png" width="350" height="350" />
 ---
 #Mesh Generation
 
