@@ -162,7 +162,7 @@ We want per-vertex curvature. Element wise curvature could have been calculated 
 ---
 #Bending Force
 <p align="center">
-<img src="Fb_icosp_hr.png" width="600" />
+<img src="Fbicosphr.png" width="600" />
 </p>
 ---
 #Validation
