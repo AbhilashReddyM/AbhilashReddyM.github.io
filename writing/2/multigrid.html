@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Making_of_a_Preconditioner</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Multigrid</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11776,7 +11776,7 @@ div#notebook {
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="The-Making-of-a-Preconditioner">The Making of a Preconditioner<a class="anchor-link" href="#The-Making-of-a-Preconditioner">&#182;</a></h1><p>by <a href="http://www.abhilashreddy.com">Abhilash Reddy M</a></p>
-<p>This is a demonstration of a multigrid preconditioned krylov solver in python3. The code and more examples are present on github at <a href="https://github.com/AbhilashReddyM/GeometricMultigrid">GeometricMultigrid</a>. The problem solved is the Poisson equation on a rectangular domain with homogenous dirichlet boundary conditions.  Finite difference with cell-centered discretization is used to get a second order accurate solution. First, the V-cycle is explained, followed by Full-Multigrid and finally a demonstration of a multigrid (V-cycle) preconditioned krylov solver.</p>
+<p>This notebook ultimately demonstrates a multigrid preconditioned Krylov solver in python3. The code and more examples are present on github at <a href="https://github.com/AbhilashReddyM/GeometricMultigrid">GeometricMultigrid</a>. The problem solved is the Poisson equation on a rectangular domain with homogenous dirichlet boundary conditions. Finite difference with cell-centered discretization is used to get a second order accurate solution. First, the V-cycle is explained, followed by Full-Multigrid and finally a demonstration of a multigrid (V-cycle) preconditioned Krylov solver.</p>
 <h3 id="Multigrid-algorithm">Multigrid algorithm<a class="anchor-link" href="#Multigrid-algorithm">&#182;</a></h3><p>We need some terminology before going further.</p>
 <ul>
 <li>Approximation</li>
@@ -11814,14 +11814,14 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Smoothing-operator">Smoothing operator<a class="anchor-link" href="#Smoothing-operator">&#182;</a></h3><p>As the name suggests this is any procedure that smooths the input function. The simplest smoothers are a certain number of Jacobi or a Gauss-Seidel iterations. Below is defined a smoother that uses red-black Gauss Seidel sweeps and returns the result of the smoothing along with the residual.</p>
+<h3 id="Smoothing-operator">Smoothing operator<a class="anchor-link" href="#Smoothing-operator">&#182;</a></h3><p>As the name suggests this is any procedure that smooths the input function. The simplest smoothers are a certain number of Jacobi or a Gauss-Seidel iterations. Below is defined a smoother that uses Gauss Seidel sweeps and returns the result of the smoothing along with the residual.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">GSrelax</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">u</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">iters</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -11937,8 +11937,8 @@ div#notebook {
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Note that we have looped over the coarse grid in both the cases above. It is easier to access the variables this way.</p>
 <h3 id="Bottom-Solver">Bottom Solver<a class="anchor-link" href="#Bottom-Solver">&#182;</a></h3><p>This comes into picture at the coarsest level, at the bottom of a V-cycle. At this level, an exact solution(to a particular derived linear system) is needed. This must be something that gives us the exact/converged solution. The number of unknowns is very small at this level(e.g 2x2=4 or 1x1=1 ) and the linear system can be solved exactly (to roundoff) by the smoother itself with few iterations. In this notebook we use 50 iterations are used here of our smoother. If we coarsify to just one point, then just one iteration will solve it exactly.</p>
-<h2 id="V-cycle">V-cycle<a class="anchor-link" href="#V-cycle">&#182;</a></h2><p>The quantities called approximation, error, residual are essential to understanding the multigrid algorithm. The unknown variable or the solution variable 'u' is present only on the finest grid. It is only used on the finest grid. The information that goes from a fine to coarse grid is the residual. The information that goes to a fine grid from a coarse grid is correction or error, often called "Coarse-grid Correction".</p>
-<p>Now that we have all the parts, we are ready to build our multigrid algorithm. We will look at a V-cycle. the function is self explanatory. It is a recursive function,i.e., it calls itself. It takes as input an initial guess 'u', the rhs 'f', the number of multigrid levels 'num_levels' among other things. At each level the V cycle calls another V-cycle. At the lowest level the solving is exact.</p>
+<p>The quantities <em>approximation</em>, <em>error</em>, <em>residual</em> are used frequently and are essential to understanding the multigrid algorithm. Typically, the actual solution solution variable 'u' is present only on the finest grid. It is only used on the finest grid. The unknowns on the coarse grid are something different (the <em>error</em>). The information that goes from a fine to coarse grid is the residual. The information that goes from a coarse grid to a fine grid is <em>correction</em> or <em>error</em>, often called "Coarse-grid correction".</p>
+<h2 id="V-cycle">V-cycle<a class="anchor-link" href="#V-cycle">&#182;</a></h2><p>Now that we have all the parts, we are ready to build our multigrid algorithm. We will look at a V-cycle. the function is self explanatory. It is a recursive function,i.e., it calls itself. It takes as input an initial guess 'u', the rhs 'f', the number of multigrid levels 'num_levels' among other things. At each level the V cycle calls another V-cycle. At the lowest level the solving is exact. (If this is too complex, I would suggest starting with a two-grid scheme and then extending it to V-cycle.)</p>
 
 </div>
 </div>
@@ -12032,7 +12032,7 @@ The coarsest problem is going to have a 2-by-2 grid.</p>
 <span class="n">nlevels</span>    <span class="o">=</span> <span class="mi">6</span>  
 <span class="n">NX</span>         <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">nlevels</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">NY</span>         <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">nlevels</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">tol</span>        <span class="o">=</span> <span class="mf">1e-15</span>      
+<span class="n">tol</span>        <span class="o">=</span> <span class="mf">1e-12</span>      
 </pre></div>
 
 </div>
@@ -12110,7 +12110,7 @@ The coarsest problem is going to have a 2-by-2 grid.</p>
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>mgd2d.py solver:
-NX: 64 , NY: 64 , tol: 1e-15 levels:  6
+NX: 64 , NY: 64 , tol: 1e-12 levels:  6
   cycle:  1 , L_inf(res.)=  0.642629986844 ,L_inf(true error):  0.0317166429701
   cycle:  2 , L_inf(res.)=  0.123076148245 ,L_inf(true error):  0.0065444191256
   cycle:  3 , L_inf(res.)=  0.0285399250988 ,L_inf(true error):  0.00129511576103
@@ -12128,7 +12128,6 @@ NX: 64 , NY: 64 , tol: 1e-15 levels:  6
   cycle:  15 , L_inf(res.)=  8.03197508503e-11 ,L_inf(true error):  6.92262721588e-05
   cycle:  16 , L_inf(res.)=  1.51771928358e-11 ,L_inf(true error):  6.92262721632e-05
   cycle:  17 , L_inf(res.)=  2.84217094304e-12 ,L_inf(true error):  6.92262721638e-05
-  cycle:  18 , L_inf(res.)=  9.09494701773e-13 ,L_inf(true error):  6.92262721639e-05
 L_inf (true error):  6.92262721639e-05
 </pre>
 </div>
@@ -12142,9 +12141,9 @@ L_inf (true error):  6.92262721639e-05
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p><strong>True error</strong> is the difference of the approximation with the analytical solution. It is largely the discretization error. This what would be present when we solve the discrete equation with a direct/exact method like gaussian elimination. We see that true error stops reducing at the 4th cycle. The approximation is not getting any better after this point. So we can stop after 4 cycles. But, in general we dont know the true error. In practice we use the norm of the (relative) residual as a stopping criterion. As the cycles progress the floating point round-off error limit is reached and the residual also stops decreasing.</p>
+<p><strong>True error</strong> is the difference of the approximation with the analytical solution. It is largely the discretization error. This what would be present when we solve the discrete equation with a direct/exact method like gaussian elimination. We see that true error stops reducing at the 5th cycle. The approximation is not getting any better after this point. So we can stop after 5 cycles. But, in general we dont know the true error. In practice we use the norm of the (relative) residual as a stopping criterion. As the cycles progress the floating point round-off error limit is reached and the residual also stops decreasing.</p>
 <p>This was the multigrid V cycle. We can use this as preconditioner to a Krylov solver. But before we get to that let's complete the multigrid introduction by looking at the Full Multi-Grid algorithm. You can skip this section safely.</p>
-<h2 id="Full-Multi-Grid">Full Multi-Grid<a class="anchor-link" href="#Full-Multi-Grid">&#182;</a></h2><p>We started with a zero initial guess for the V-cycle. Presumably, if we had a better initial guess we would get better results.  So we might solve a coarse problem exactly (recursively with FMG) and interpolate it onto the fine grid and use that as the initial guess for the V-cycle. The result of doing this recursively is the Full Multi-Grid(FMG) Algorithm. Unlike the V-cycle which was an iterative procedure, FMG is a direct solver. There is no successive improvement of the approximation. It straight away gives us an approximation that is within the discretization error. The FMG algorithm is given below.</p>
+<h2 id="Full-Multi-Grid">Full Multi-Grid<a class="anchor-link" href="#Full-Multi-Grid">&#182;</a></h2><p>We started with a zero initial guess for the V-cycle. Presumably, if we had a better initial guess we would get better results.  So we might solve a coarse problem exactly (recursively with FMG) and interpolate it onto the fine grid and use that as the initial guess for the V-cycle. The result of doing this recursively is the Full Multi-Grid(FMG) Algorithm. Unlike the V-cycle which was an iterative procedure, FMG is a direct solver. There is no successive improvement of the approximation. It straight away gives us an result that is within the discretization error. The FMG algorithm is given below.</p>
 
 </div>
 </div>
@@ -12236,7 +12235,7 @@ L_inf (true error):  6.64976295283e-05
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Well... It works. The residual is large but the true error is within the discretization level. FMG is said to be scalable because the amount of work needed is linearly proportional to the the size of the problem. In big-O notation, FMG is $\mathcal{O}(N)$. Where N is the number of unknowns. Exact methods (Gaussian Elimination, LU decomposition  ) are typically $\mathcal{O}(N^3)$</p>
+<p>And... It works! The residual is large but the true error is within the discretization level. FMG is said to be scalable because the amount of work needed is linearly proportional to the the size of the problem. In big-O notation, FMG is $\mathcal{O}(N)$. Where N is the number of unknowns. Exact methods (Gaussian Elimination, LU decomposition  ) are $\mathcal{O}(N^3)$</p>
 
 </div>
 </div>
@@ -12250,23 +12249,19 @@ L_inf (true error):  6.64976295283e-05
 <p><strong>This allows us to use any blackbox function stationary iterative method as a preconditioner</strong></p>
 <p>We can use the multigrid V-cycle as a preconditioner this way. We cant use FMG because it is not an iterative method.</p>
 <p>The matrix as a function can be defined using <strong>LinearOperator</strong> from <strong>scipy.sparse.linalg</strong>. It gives us an object which works like a matrix in-so-far as the product with a vector is concerned. It can be used as a regular 2D numpy array in multiplication with a vector. This can be passed to GMRES() or BiCGStab() as a preconditioner.</p>
-<p>Having a symmetric preconditioner would be nice because it will retain the symmetry if the original problem is symmetric. The multigrid V-cycle above is not symmetric because the Gauss-Seidel preconditioner is unsymmetric. If we were to use jacobi method, or symmetric Gauss-Seidel (SGS) method, then symmetry would be retained. As such Conjugate Gradient method will not work here becuase our preconditioner is not symmetric.</p>
-<p>Below is the code for defining a V-Cycle preconditioner</p>
+<p>Having a symmetric preconditioner would be nice because it will retain the symmetry if the original problem is symmetric. The multigrid V-cycle above is not symmetric because the Gauss-Seidel preconditioner is unsymmetric. If we were to use jacobi method, or symmetric Gauss-Seidel (SGS) method, then symmetry would be retained. As such Conjugate Gradient method will not work here becuase our preconditioner is not symmetric. It is possible to keep the symmetry intact when using Gauss-Seidel relaxation if the ordering (order of evaluation in GS) is opposite in the pre and post smoothing sweeps.</p>
+<p>Below is the code for defining a V-Cycle preconditioner. It returns a (scipy.sparse.linalg.) LinearOperator that can be passed to Krylov solvers as a preconditioner</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.sparse.linalg</span> <span class="k">import</span> <span class="n">LinearOperator</span><span class="p">,</span><span class="n">bicgstab</span>
 <span class="k">def</span> <span class="nf">MGVP</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">,</span><span class="n">num_levels</span><span class="p">):</span>
-  <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">  Multigrid Preconditioner. Returns a (scipy.sparse.linalg.) LinearOperator that can</span>
-<span class="sd">  be passed to Krylov solvers as a preconditioner. </span>
-<span class="sd">  &#39;&#39;&#39;</span>
   <span class="k">def</span> <span class="nf">pc_fn</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
     <span class="n">u</span> <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nx</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">ny</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span>
     <span class="n">f</span> <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nx</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">ny</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span>
@@ -12294,13 +12289,10 @@ L_inf (true error):  6.64976295283e-05
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">Laplace</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">):</span>
-  <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">  Action of the Laplace matrix on a vector v</span>
-<span class="sd">  &#39;&#39;&#39;</span>
   <span class="k">def</span> <span class="nf">mv</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
     <span class="n">u</span> <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nx</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">ny</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span>
     <span class="n">ut</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">])</span>
@@ -12332,7 +12324,7 @@ L_inf (true error):  6.64976295283e-05
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The nested function is required because "matvec" in LinearOperator takes only one argument-- the vector. But we require the grid details and boundary condition information to create the Poisson matrix. Now will use these to solve a problem. Unlike earlier where we used an analytical solution and RHS, we will start with a random vector which will be our exact solution, and multiply it with the Poisson matrix to get the Rhs vector for the problem. There is no analytical equation associated with the matrix equation.</p>
+<p>The nested function is required because "matvec" in LinearOperator takes only one argument-- the vector. But we require the grid details and boundary condition information to create the Poisson matrix. Now will use these to solve a problem. Unlike earlier where we used an analytical solution and RHS, we will start with a random vector which will be our exact solution, and multiply it with the Poisson matrix to get the RHS vector for the problem. There is no analytical equation associated with the matrix equation</p>
 <p>The scipy sparse solve routines do not return the number of iterations performed. We can use this wrapper to get the number of iterations</p>
 
 </div>
@@ -12368,7 +12360,7 @@ L_inf (true error):  6.64976295283e-05
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="n">LinearOperator</span><span class="p">((</span><span class="n">NX</span><span class="o">*</span><span class="n">NY</span><span class="p">,</span><span class="n">NX</span><span class="o">*</span><span class="n">NY</span><span class="p">),</span> <span class="n">matvec</span><span class="o">=</span><span class="n">Laplace</span><span class="p">(</span><span class="n">NX</span><span class="p">,</span><span class="n">NY</span><span class="p">))</span>
@@ -12405,10 +12397,10 @@ L_inf (true error):  6.64976295283e-05
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>without preconditioning. status: 0 , Iters:  134
-error : 2.23018253864e-08
+<pre>without preconditioning. status: 0 , Iters:  146
+error : 1.62363409384e-08
 With preconditioning. status: 0 , Iters:  7
-error : 8.53778769905e-10
+error : 4.48214265703e-09
 </pre>
 </div>
 </div>
@@ -12421,30 +12413,16 @@ error : 8.53778769905e-10
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Without the preconditioner ~150 iterations were needed, where as with the V-cycle preconditioner the solution was obtained in far fewer iterations. This is not to say that the preconditioning gives a faster solution, because the cost of the preconditioner also has to be taken into account. But generally it is the case that the correct preconditioning significantly reduces the effort needed to get a solution. Additionally, an iterative procedure may not even converge in the absense of a preconditioner.</p>
+<p>Without the preconditioner ~150 iterations were needed, where as with the V-cycle preconditioner the solution was obtained in far fewer iterations. This is not to say that the preconditioning gives a faster solution, because the cost of the preconditioner also has to be taken into account. But generally it is the case that the correct preconditioning significantly reduces the effort needed to get a solution, and thus is faster. Additionally, an iterative procedure may not even converge in the absense of a preconditioner.</p>
 <p>So, there we have it. A Multigrid Preconditioned Krylov Solver.</p>
 <p>The problem considered was a very simple one. With homogeneous dirichlet BCs we have same same BCs at all grid levels. For general BCs some additional considerations are required. Even when there are non homogeneous dirichlet BCs, on the coarse grid we still get homogeneous BCs because on the coarse grid we are solving the residual equation.</p>
+<p>The github repo, <a href="https://github.com/AbhilashReddyM/GeometricMultigrid">GeometricMultigrid</a>, contains the 3D version of this multigrid algorithm, along with some other examples. Here, readability of the code has been prioritized over performance. By using <code>numpy</code> array operations, the performance can be significantly improved and large ($\sim128^3$) problems can be solved quickly on a personal computer. This is shown in the github repo as well.</p>
 
 </div>
 </div>
 </div>
     </div>
   </div>
-    <footer><center>
-  			Copyright &copy; 2016 &nbsp;  <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M</a>
-      </center>
-      <footer>
-
-<!--Google Analytics Script -->
-       <script>
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-            })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-            ga('create', 'UA-78593618-1', 'auto');
-            ga('send', 'pageview');
-      </script>
-
 </body>
 
  

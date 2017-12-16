@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Spectral Methods 1</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>SpectralMethods1</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,7 +11775,8 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Spectral-Methods-in-Python-1">Spectral Methods in Python 1<a class="anchor-link" href="#Spectral-Methods-in-Python-1">&#182;</a></h2><p>This is me building up on the problems given by Lloyd N. Trefethen in his book <em>Spectral Methods in MATLAB</em>. There are a few different python implementations of the original matlab codes available. I have lifted the <code>cheb</code> function from <a href="https://github.com/mewilliams/another-chebpy">another-chebpy</a>.</p>
+<h2 id="Spectral-Methods-in-Python-1">Spectral Methods in Python 1<a class="anchor-link" href="#Spectral-Methods-in-Python-1">&#182;</a></h2><p>by <a href="www.abhilashreddy.com">Abhilash Reddy M</a></p>
+<p>This is me building up on the problems given by Lloyd N. Trefethen in his book <em>Spectral Methods in MATLAB</em>. There are a few different python implementations of the original matlab codes available. I have lifted the <code>cheb</code> function from <a href="https://github.com/mewilliams/another-chebpy">another-chebpy</a>.</p>
 
 </div>
 </div>
@@ -13315,7 +13316,7 @@ SqkctDAopZTKQQuDUkqpHLQwKKWUyuH/AWtoHGzfcXUJAAAAAElFTkSuQmCC
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="k">import</span> <span class="n">newton_krylov</span>
@@ -13338,16 +13339,33 @@ SqkctDAopZTKQQuDUkqpHLQwKKWUyuH/AWtoHGzfcXUJAAAAAElFTkSuQmCC
 <div class="prompt"></div>
 
 
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>total number of evaluations is  72
--0.226855819995
-</pre>
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
+<span class="ansi-red-intense-fg ansi-bold">NameError</span>                                 Traceback (most recent call last)
+<span class="ansi-green-intense-fg ansi-bold">&lt;ipython-input-1-6455182cd9ce&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span><span class="ansi-blue-intense-fg ansi-bold">()</span>
+<span class="ansi-green-fg">      1</span> <span class="ansi-green-intense-fg ansi-bold">from</span> scipy<span class="ansi-yellow-intense-fg ansi-bold">.</span>optimize <span class="ansi-green-intense-fg ansi-bold">import</span> newton_krylov
+<span class="ansi-green-fg">      2</span> nevals<span class="ansi-yellow-intense-fg ansi-bold">=</span><span class="ansi-cyan-intense-fg ansi-bold">0</span>
+<span class="ansi-green-intense-fg ansi-bold">----&gt; 3</span><span class="ansi-yellow-intense-fg ansi-bold"> </span>u<span class="ansi-yellow-intense-fg ansi-bold">=</span>newton_krylov<span class="ansi-yellow-intense-fg ansi-bold">(</span>F<span class="ansi-yellow-intense-fg ansi-bold">,</span><span class="ansi-cyan-intense-fg ansi-bold">0.0</span><span class="ansi-yellow-intense-fg ansi-bold">*</span>np<span class="ansi-yellow-intense-fg ansi-bold">.</span>ones<span class="ansi-yellow-intense-fg ansi-bold">(</span>N<span class="ansi-yellow-intense-fg ansi-bold">-</span><span class="ansi-cyan-intense-fg ansi-bold">1</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">      4</span> print<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-blue-intense-fg ansi-bold">&#39;total number of evaluations is &#39;</span><span class="ansi-yellow-intense-fg ansi-bold">,</span> nevals<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">      5</span> print<span class="ansi-yellow-intense-fg ansi-bold">(</span>u<span class="ansi-yellow-intense-fg ansi-bold">[</span>N<span class="ansi-yellow-intense-fg ansi-bold">//</span><span class="ansi-cyan-intense-fg ansi-bold">2</span><span class="ansi-yellow-intense-fg ansi-bold">-</span><span class="ansi-cyan-intense-fg ansi-bold">1</span><span class="ansi-yellow-intense-fg ansi-bold">]</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+
+<span class="ansi-red-intense-fg ansi-bold">NameError</span>: name &#39;F&#39; is not defined</pre>
 </div>
 </div>
 
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><a href="www.abhilashreddy.com">Back to Mainpage</a></p>
+
+</div>
+</div>
 </div>
     </div>
   </div>
