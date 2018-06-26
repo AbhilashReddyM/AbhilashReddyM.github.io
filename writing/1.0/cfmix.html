@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <script type="text/javascript" async
+      src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+      </script>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0">
+      <title>C/Fortran mixed programming</title>
+      <meta name="Description" content="C and Fortran mixed programming">
+      <link rel="canonical" href="self">
+      <link rel="stylesheet" href="../../assets/css/styles.css">
+      <link rel="stylesheet" href="../../assets/css/prism.css" />
+    </head>
+    <body>
+      <script src="../../assets/js/prism.js"></script>
+        <center>
+          <header><a href=""><h1>Mixed C/Fortran Programming</h1></a></header>
+          <aside>By Abhilash Reddy M.</aside>
+        </center>
+ <h3><strong>Introduction/Background</strong></h3>
+        <p>Assume we need to write fortran and wish to call C code that has already been written and cannot be changed (e.g. a precompiled library). There are different levels of complexity possible depending on what is needed. Eg:
+          <ol>
+            <li>Fortran calls a C function that does not take any arguments</li>
+            <li>Fortran calls a C function with typical variable arguments</li>
+            <li>Fortran calls a C function with pointer arguments</li>
+          </ol>
+          Here, from fortran, I will call a C function that takes in real-type and function pointer as arguments. The example I use here to describe the programming is to approximate an integral by Gauss-Legendre quadrature. The main program and the function to be integrated are in fortran, while the procedure/subprogram that actually does the quadrature calculation is in C and cannot be changed.
+          </p>
+          <p>
+            I have picked a function that gives us \(\pi\) on integration. Out of all such integrals, one with definite limits is required. Also, absence of singularities in the integrand is desirable. One such integral is:
+
+            $$ \int_{0}^{1} \frac{4}{1+x^2} dx=\pi$$
+
+            The integrand is well behaved in the region of interest and will do the job for now.</p>
+<p>There are, of course, more superior and efficient ways to calculate \(\pi\) numerically/computationally. For instance, the Ramanujan-type formulas or the "spigot" algorithms like the Bailey–Borwein–Plouffe formula or the <i> Gauss-Legendre algorithm</i> (different from the Gauss-Legendre quadrature), some of which have been used for getting a world record number of digits of \(\pi\).
+          </p>
+<h3>C Code</h3><p>Obviously, we need to know how the function is to be called. Thus, we require the name of the function, its return type, the list of arguments and the corresponding data types. The function prototype for the example here is given below. I have taken this C code from the wonderful <a href="http://www.mymathlib.com">www.mymathlib.com</a> website.
+<pre><code class="language-C">
+/*a=lower limit
+  b=upper limit
+  f=pointer to function to be integrated
+*/
+long double
+  Gauss_Legendre_Integration_10pts( long double a, long double b, long double (*f)(long double) )
+{...
+}
+</code></pre>
+Now we know that the function is named 'Gauss_Legendre_Integration_10pts' and returns a 'long double'. And we can also gather what arguments it expects. This is all the information we need to call this function from a fortran program. Essentially we are calling a blackbox function.
+</p>
+<h3>Fortran Code</h3><p>The whole fortran program is given below with discussion following.
+<pre><code class="language-fortran">
+program Integrate
+  use, intrinsic :: iso_c_binding,cl=>c_long_double
+  implicit none
+
+  interface
+    function gl10(a, b, f) &
+    bind(c,name='Gauss_Legendre_Integration_10pts') !the function name case-sensitive because C is case-sensitive
+      import::cl,c_funptr
+      real(cl), intent(in), value :: a, b
+      type(c_funptr), intent(in), value :: f
+      real(cl) gl10
+    endfunction
+
+    function f1(x) bind(c)
+      import::cl
+      real(cl),intent(in), value ::x
+      real(cl) f1
+    endfunction
+  endinterface
+
+  type(c_funptr) :: f1_cptr
+  real(cl)  :: a,b
+
+  a=0; b=1
+
+  f1_cptr = c_funloc (f1) !gets the C address of the fortran function f1
+  write(*,*)'error= ',gl10(a,b,f1_cptr)-4*atan(1.0_cl)
+endprogram
+
+function f1(x) bind(c)
+    use, intrinsic :: iso_c_binding,cl=>c_long_double
+    implicit none
+    real(cl),intent(in), value ::x
+    real(cl) f1
+    f1=4.0/(1.0+x**2)
+  endfunction
+</code></pre>
+<h4>C function interface</h4>
+<p>We have to use the right data types in fortran corresponding to those in C. These types are present in the module 'iso_c_binding'. We will be using two of these, i.e "c_long_double" and c_funptr. "c_long_double" is a kind of real, whereas 'c_funptr' is a derived datatype. I have just aliased the 'c_long_double' to 'cl' to reduce typing.</p>
+
+<p> The interface block is used to make fortran understand how to call the function. The first function in the interface, 'gl10', is prototype for the C function that does the quadrature calculation. It is declared with the 'bind(C)' attribute along with the name of the function in C. By this interface, we give this C function, 'Gauss_Legendre_Integration_10pts', a different name in fortran, 'gl10'. Now, in fortran we can call this function as g10(...). The C function name  that appears within 'bind' is case-sensitive.
+</p>
+<p>There is some flexibility available in interfacing with the C functions. In general, in fortran, we can match the variables, pointers and function pointers in the argument list of a C function in two different ways. I do not know if one way is preferable over the other however.</p>
+<p>
+The first two arguments in 'Gauss_Legendre_Integration_10pts' are scalar variables of type real(cl) and not pointers. As the convention in C is to pass scalars by value, the interface declares these arguments with the 'value' attribute. It is required because the C function expects a value, whereas a fortran-language call typically sends out the reference/address (usually). Now, if 'a' and 'b' in the C function definition were instead '*a' and '*b', the 'value' attribute should not be present in the interface. In our case we can edit the C code('a' to '*a' and 'b' to '*b' throughout), and remove the value attribute from 'a' and 'b' in the interface and verify that this approach also works. </p>
+
+<p>Alternately, in the case with pointer arguments (like '*a','*b') for the C function, we can find the C address (using C_LOC(..)) of the corresponding variables in fortran and pass this address by value. The third argument, a C-style function pointer, is also declared with the 'value' attribute. This way the C function recieves a function address for the function pointer, f . For interoperability, for pointers that are dummy arguments, the 'value' attribute is usually required because void* matches TYPE(C_PTR), VALUE, while TYPE(C_PTR) by itself, i.e. without the 'value' attribute, matches void**. The same goes for function pointers. If the value attribute was not present in the interface for 'f', then '*f' in the C function would have to be replaced by '**f' throughout.</p>
+
+<p>Here our choice of using the value attribute for all the dummy-arguments of the C function is dictated by our wish to leave the C code untouched</p>
+
+<h4>External fortran function</h4>
+<p>The function to be integrated, f1, is defined outside the scope of the main program. So, an interface has to be provided for this function as well. Since this function is being called from C code, it needs to be interoperable with C. So, this function is defined with the bind(C) attribute. The name of this function is only needed by the main fortran program. The C function access/calls this function using a pointer and so it doesnt need the name in this case.</p>
+<p>
+But, in the general case this fortran function can be called from C code as well. Like before, The 'name' argument of bind can be provided if one wishes to call this function with a different name within the C code (see the end of the page).
+</p>
+<h4>C_FUNLOC(..)</h4>
+<p>C_FUNLOC(..) takes the name of a fortran function and returns a C function address. The type is a derived type called 'c_funptr' that is present in the iso_c_binding module. Here I have used the variable 'f1_cptr' to store the address of the fortran function 'f1'. Now that all the arguments have been defined, the C function is called in the program as 'gl10(a,b,f1_cptr)'.
+</p>
+
+<p>To see how close the integral gets to \(\pi\) the error is calculated and printed. That wraps it up for now. The code can be downloaded from the links below.</p>
+
+<p>Download Links:
+ <ol>
+<li><a href='integrate.f90'>Main Fortran Program</a></li>
+<li><a href='gauss_legendre_10pts.c'>Gaussian Integration C function</a></li> 
+</ol>
+To compile the code the following can be done for gcc/gfortran:
+<pre><code class="language-bash">
+$>gcc -o gauss_legendre_10pts.o -c gauss_legendre_10pts.c
+$>gfortran -o integrate.o -c integrate.f90
+$>gfortran -o integrate.exe integrate.o gauss_legendre_10pts.o
+</code></pre>
+
+</p>
+&nbsp;
+&nbsp;
+&nbsp;
+<p><h4>Footnote</h4>
+When compiling with gfortran & gcc, I am seeing unexpected behavior while calling a fortran function from within a C function. In the C function when I printf the value returned by the fortran function, it always shows as zero, irrespective of the actual value. Intel compilers work as expected though.
+
+My gfortran version:<br>
+<pre><code class="language-bash">
+Using built-in specs.
+COLLECT_GCC=gfortran
+COLLECT_LTO_WRAPPER=C:/TDM-GCC-64/bin/../libexec/gcc/x86_64-w64-mingw32/5.1.0/lto-wrapper.exe
+Target: x86_64-w64-mingw32
+Configured with: ../../../src/gcc-5.1.0/configure --build=x86_64-w64-mingw32 --enable-targets=all --enable-languages=ada,c,c++,fortran,lto,ob
+jc,obj-c++ --enable-libgomp --enable-lto --enable-graphite --enable-cxx-flags=-DWINPTHREAD_STATIC --disable-build-with-cxx --disable-build-po
+ststage1-with-cxx --enable-libstdcxx-debug --enable-threads=posix --enable-version-specific-runtime-libs --enable-fully-dynamic-string --enab
+le-libstdcxx-threads --enable-libstdcxx-time --with-gnu-ld --disable-werror --disable-nls --disable-win32-registry --prefix=/mingw64tdm --wit
+h-local-prefix=/mingw64tdm --with-pkgversion=tdm64-1 --with-bugurl=http://tdm-gcc.tdragon.net/bugs
+Thread model: posix
+gcc version 5.1.0 (tdm64-1)
+</code></pre>
+    <footer><center>
+  			Copyright &copy; 2016 &nbsp;  <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M</a>
+      </center>
+      <footer>
+
+<!--Google Analytics Script -->
+       <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-78593618-1', 'auto');
+            ga('send', 'pageview');
+      </script>
+
+</body></html>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+
+<head>
+  <script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+  </script>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0">
+  <title>gfortran, gcc on Windows with MPI</title>
+  <meta name="Description" content="Setup a windows computer to use Mingw and MPI">
+  <link rel="canonical" href="self">
+  <link rel="stylesheet" href="../../assets/css/styles.css">
+  <link rel="stylesheet" href="../../assets/css/prism.css" />
+</head>
+
+
+    <body>      <script src="../../assets/js/prism.js"></script>
+    <center>
+      <header><a href=""><h1>MPI + GCC + GFORTRAN on Windows</h1></a></header>
+      <aside>By <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M.</a></aside>
+    </center>
+
+
+
+<p>This is tested on Windows 7 and and Windows 10 and gcc version 7.1.0 (x86_64-posix-seh-rev2, Built by MinGW-W64 project). </p>
+<p>These are instructions to get Mingw + MPI going on windows the easy way. I have tested it for gcc and gfortran. </p>
+<p>We need to download 3 items: mingw-w64, MSMPI and MSMPI SDK</p>
+<ol start='' ><li>
+Download and Install mingw-w64 somewhere.</li>
+<li>
+Download and install MSMPI and MSMPI SDK from microsoft. </li>
+</ol>
+<p>MSMPI provides &quot;mpiexec.exe&quot; MSMPI SDK provides the MPI libraries and header files. We need msmpi.lib and msmpi.dll and the headers files for linking purposes. Upon installation, some environment variables are set-up. Doing &quot;set MSMPI&quot; in a cmd shell will show the directories of interest. For example,</p>
+<pre><code class='lang-shell'>C:\&gt;set MSMPI
+MSMPI_BIN=C:\Program Files\Microsoft MPI\Bin\
+MSMPI_INC=C:\Program Files (x86)\Microsoft SDKs\MPI\Include\
+MSMPI_LIB32=C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x86\
+MSMPI_LIB64=C:\Program Files (x86)\Microsoft SDKs\MPI\Lib\x64\
+</code></pre>
+<p><code>%MSMPI_INC%</code> is the mpi include directory. </p>
+<p> <code>mpiexec</code> is in <code>%MSMPI_BIN%</code></p>
+<p><code>msmpi.lib</code> is present in <code>%MPI_LIB64%</code> </p>
+<p><code>msmpi.dll</code> is present in  <code>%SYSTEMROOT%\System32</code>.</p>
+<p><strong>Before going further make sure that mingw and mpiexec are added to path.</strong> Easiest way to do this is to open a MINGW shell first and then add mpiexec to the path by doing</p>
+<pre code class='shell'>
+C:\&gt; set PATH=%PATH%;%MSMPI_BIN%
+</pre>
+<p>Check that <code>mpiexec</code> and <code>gcc</code> both work. Use this shell to carry out the following steps, by navigating into the various directories from here.</p>
+<ol start='3' ><li>
+Copy <code>msmpi.dll</code> and <code>msmpi.lib</code> to a temporary folder and navigate the mingw cmd window to this folder. Create a static library &quot;libmsmpi.a&quot; using gendef and dlltool.
+<pre><code class="language-shell">
+C:\&gt; mkdir tempdir
+C:\&gt; cd tempdir
+C:\&gt; mkdir include
+C:\tempdir\&gt; copy &quot;%MSMPI_INC%&quot; include
+C:\tempdir\&gt; copy &quot;%MSMPI_LIB64%&quot;\msmpi.lib .
+C:\tempdir\&gt; copy %SYSTEMROOT%\System32\msmpi.dll .
+C:\tempdir\&gt; gendef msmpi.dll
+C:\tempdir\&gt; dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
+</code></pre> </li></ol>
+<ol start='4' ><li>
+<code>libmsmpi.a</code> is the mpi library ready to be used. Put it in a convenient library folder. I suggest <code>C:\lib\mpi\lib</code> </li>
+<li>
+Copy the <code>include</code> folder to another convenient place. I suggest copying to <code>C:\lib\mpi</code>, so that the path to mpi.h is <code>C:\lib\mpi\include\mpi.h</code>. We need to edit some of these files. Leave the original files alone and only edit the copy you make. </li>
+<li>
+Open the file <code>mpi.h</code> and add <code>#include &lt;stdint.h&gt;</code>, just before the line</li>
+</ol>
+<pre code class='undefined'>
+typedef __int64 MPI_Aint;
+</pre>
+<p>At this point MPI C/C++ programs are ready to be compiled. For example, if <code>libmsmpi.a</code> is in <code>C:\lib\mpi\lib</code> and <code>mpi.h</code> is in <code>C:\lib\mpi\include</code> we can compile <code>my_mpi_program.c</code> by:</p>
+<pre lang='undefined'>
+gcc -o out.exe my_mpi_program.c -IC:\lib\mpi\include -LC:\lib\mpi\lib -lmsmpi
+</pre>
+<p>Make sure that <code>mpiexec</code> is in <code>PATH</code> and run the program with</p>
+<pre lang='undefined'>
+mpiexec -np 4 out.exe
+</pre>
+<p>With mingw, gcc has some default search dirs. Additionally, you can set environment variables to point gcc to search in a certain directories for includes or libraries. You can see the default search directories by doing </p>
+<pre lang='undefined'>
+gcc --print-search-dirs. 
+</pre>
+<p>It shows the directories where it looks for &lt;...&gt; includes  and &quot;...&quot; includes and libraries by default. If the mpi.h and libmsmpi.a are present in the default search dirs, then compiling MPI C programs is just </p>
+<pre lang='undefined'>
+gcc -o out.exe my_mpi_program.c -lmsmpi
+</pre>
+<p>The mpi header and library are automatically found. We are just letting the linker know that it needs to link against msmpi. More info at <a href='http://www.mingw.org/wiki/includepathhowto' target='_blank' >http://www.mingw.org/wiki/includepathhowto</a> </p>
+<p></p>
+<h4>Fortran + MPI</h4>
+<p>Now for Fortran, in the copy of the <code>%MSMPI_INC%</code> you created, do the following:</p>
+<ol start='' ><li>
+Rename <code>mpi.f90</code> to <code>mpi.F90</code></li>
+<li>
+In both <code>mpi.F90</code>  change find and change</li>
+</ol>
+<pre lang='undefined'>
+include &quot;mpifptr.h&quot;
+</pre>
+<p>to</p>
+<pre lang='undefined'>
+include &quot;x64/mpifptr.h&quot;
+</pre>
+<ol start='3' ><li>
+Navigate to this folder in the mingw shell and issue the following command to generate <code>mpi.mod</code> file,</li>
+</ol>
+<pre lang='undefined'>
+   gfortran -D_WIN64 -D INT_PTR_KIND()=8 -fno-range-check mpi.F90
+</pre>
+<p>This should create <code>mpi.mod</code> file without any errors. Now MPI with fortran is ready for primetime. One caveat is we have to do <code>use mpi</code> rather than <code>include &quot;mpif.h&quot;</code> in the program.  For example:</p>
+<pre><code class='language-fortran' >
+program hello
+use mpi
+implicit none
+  integer rank, num_procs, ierror
+  
+  call MPI_INIT(ierror)
+  call MPI_COMM_SIZE(MPI_COMM_WORLD, num_procs, ierror)
+  call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
+  print*, &#39;Process &#39;, rank, &#39;: Hello world&#39;
+  call MPI_FINALIZE(ierror)
+end
+</code></pre>
+<p>A fortran program using MPI can be compiled with</p>
+<pre lang='undefined'>
+gfortran -o out.exe my_mpi_program.F90 -IC:\lib\mpi\include -LC:\lib\mpi\lib -lmsmpi
+</pre>
+<p>It can be run exactly like the C program.</p>
+<p>If <code>libmsmpi.a</code> is found automatically then <code>-LC:\lib\mpi\lib</code> may be left out. The include directory (-I###) is needed because gfortran in mingw does not look anywhere for include files. Also there isn&#39;t an environment variable that can be set for include files. So, the include path always has to be explicitly specified for fortran programs with mpi.</p>
+<p>The End.</p>
+<p>Written with help from:</p>
+<ol start='' ><li>
+<a href='https://github.com/coderefinery/autocmake/issues/85#issue-102874399' target='_blank' >https://github.com/coderefinery/autocmake/issues/85#issue-102874399</a></li>
+<li>
+<a href='http://www.math.ucla.edu/~wotaoyin/windows_coding.html' target='_blank' >http://www.math.ucla.edu/~wotaoyin/windows_coding.html</a></li>
+</ol>
+<p></p>
+<p>PS:</p>
+<p>The procedure shown here creates a static library for mpi. We could have used the dynamic libraries as well. Instead of making <code>libmsmpi.a</code> we can use  <code>msmpi.dll</code> directly by placing it in the library search path. The commands are same as before. With the dynanmic library GCC works A-okay but gfortran does not. The problem is in the linking step. Compiling to .o with gfortran and linking with gcc with -lgfortran works.</p>
+    <footer><center>
+  			Copyright &copy; 2016 &nbsp;  <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M</a>
+      </center>
+      <footer>
+
+<!--Google Analytics Script -->
+       <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-78593618-1', 'auto');
+            ga('send', 'pageview');
+      </script>
+
+
+
+</body>
+</html>
