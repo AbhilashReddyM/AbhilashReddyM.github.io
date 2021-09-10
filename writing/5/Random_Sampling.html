@@ -12467,7 +12467,7 @@ div#notebook {
 <p>From the paper:</p>
 <blockquote><p>Generate $V_1$ and $V_2$ independent uniform on (-1,1) until $S= V_1^2+ V_2^2&lt;1$ then form $(~2V_1(1-S)^{1/2}~,~2V_2(1-S)^{1/2}~,~1-2S~)$</p>
 </blockquote>
-<p>Essentially we first generate uniform random samples on disk($\equiv$ inside a circle) and then transform them as prescribed to get poitns on a sphere. To generate the points on a disk, instead of rejection sampling as described, we will use the 'best method' described earlier.</p>
+<p>Essentially we first generate uniform random samples on disk($\equiv$ inside a circle) and then transform them as prescribed to get points on a sphere. To generate the points on a disk, instead of rejection sampling as described, we will use the 'best method' described earlier.</p>
 
 </div>
 </div>
@@ -12532,7 +12532,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Using-quaternions">Using quaternions<a class="anchor-link" href="#Using-quaternions">&#182;</a></h2><p>A <a href="https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation">Quaternion</a> is a set of 4 numbers represented as $(w,x,y,z)$ or $w+x~i+y~j+z~k$. This business is an extension of the Argand diagram to 3D space. $i,j,k$ are imaginary numbers such that $i^2=j^2=k^2=ijk=-1$. The $i,j,k$ do not commute($ijk\neq ikj$). Quaternions can be used to rotate vectors in 3D space. A vector in 3D space can be rotated to a general position by rotating it about each of three axis in succession. This operation does not commute as well. However, it turns out that any rotated position can be obtained by rotating the original vector by a particular angle about a particular axis. This is the axis-angle specification of a rotation. Quaternion is an alternative to the axis-angle method to represent rotations.</p>
+<h2 id="Using-quaternions">Using quaternions<a class="anchor-link" href="#Using-quaternions">&#182;</a></h2><p>A <a href="https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation">Quaternion</a> is a set of 4 numbers represented as $(w,x,y,z)$ or $w+x~i+y~j+z~k$. This can be thought of as an extension of complex numbers. $i,j,k$ are imaginary numbers such that $i^2=j^2=k^2=ijk=-1$. The $i,j,k$ do not commute($ijk\neq ikj$). Quaternions can be used to rotate vectors in 3D space. A vector in 3D space can be rotated to a general position by rotating it about each of three axis in succession. This operation does not commute as well. However, it turns out that any rotated position can be obtained by rotating the original vector by a particular angle about a particular axis. This is the axis-angle specification of a rotation. Quaternion is an alternative to the axis-angle method to represent rotations.</p>
 <p>Choose three points  $u_1,u_2,u_3 \in [0,1]$ uniformly at random. A uniform, random quaternion is given by the simple expression $h = (\sqrt{1-u_1}\sin 2 \pi u_2, \sqrt{1-u_1}\cos 2 \pi u_2, \sqrt{u_1}\sin 2 \pi u_3, \sqrt{u_1}\cos 2 \pi u_3)$. (K. Shoemake. Uniform random rotations. D. Kirk, editor, Graphics Gems III, pages 124-132. Academic, New York, 1992)</p>
 
 </div>
@@ -12727,7 +12727,7 @@ div#notebook {
 </ul>
 
 <p>
-This page is available as a notebook at  <a href="https://github.com/AbhilashReddyM/AbhilashReddyM.github.io/blob/master/writing/5/Random%20Sampling.ipynb">Random Sampling. </a>
+This page is available as a notebook at  <a href="https://github.com/AbhilashReddyM/notebooks/blob/main/random_sampling/Random%20Sampling.ipynb">Random Sampling. </a>
 
 </p>
 </div>
