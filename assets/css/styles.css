@@ -7,10 +7,11 @@ body {
   background: #2c2c2c;
   color: #BBBBBB;
   font-family: 'Libre Baskerville', serif;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.6;
   text-shadow: 0 0px 0 #000000;
-  max-width: 75%;
+  max-width: 42em;
+  padding: 2% 5%;
 }
 
 a {
