@@ -26,23 +26,33 @@
   <script src="../../assets/js/prism.js"></script>
   <center>
     <header><a href="">
-        <h1>MPI + GCC + GFORTRAN on Windows</h1>
+        <h1>MPI + GCC + GFortran on Windows</h1>
       </a></header>
     <aside>By <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M.</a></aside>
   </center>
 
-
+  <p><strong>Please Note:</strong> Before you get into the steps below, I strongly recommend using <a
+      href="https://learn.microsoft.com/en-us/windows/wsl/install">WSL</a> for mpi coding on windows. These steps are
+    from a time before WSL. Do yourself a favor and use WSL!</p>
 
   <p>This is tested on Windows 7 and and Windows 10 and gcc version 7.1.0 (x86_64-posix-seh-rev2, Built by MinGW-W64
     project). </p>
-  <p>These are instructions to get Mingw + MPI going on windows the easy way. I have tested it for gcc and gfortran.
+  <p> <strong>2024.04.30 Update:</strong> I tested this with
+    <code>gcc (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders) 13.2.0</code> and
+    <code>Microsoft MPI (MS-MPI) v10.1.3</code>.
   </p>
+  <h2>MPI + gcc + gfortran on Windows: Instructions</h2>
+  <p>These are instructions to get Mingw + MPI going on windows. I have tested it for gcc and gfortran. You should
+    really use WSL for this. </p>
   <p>We need to download 3 items: mingw-w64, MSMPI and MSMPI SDK</p>
   <ol start=''>
     <li>
-      Download and Install mingw-w64 somewhere.</li>
+      Download and install GCC and MinGW-w64 for Windows. It may be obtained from <a href="https://winlibs.com/">
+        WinLibs</a></li>
     <li>
-      Download and install MSMPI and MSMPI SDK from microsoft. </li>
+      Download and install <a
+        href="https://learn.microsoft.com/en-us/message-passing-interface/microsoft-mpi#ms-mpi-downloads">MSMPI and
+        MSMPI SDK from microsoft.</a> </li>
   </ol>
   <p>MSMPI provides &quot;mpiexec.exe&quot; MSMPI SDK provides the MPI libraries and header files. We need msmpi.lib and
     msmpi.dll and the headers files for linking purposes. Upon installation, some environment variables are set-up.
@@ -72,9 +82,9 @@ C:\&gt; set PATH=%PATH%;%MSMPI_BIN%
 C:\&gt; mkdir tempdir
 C:\&gt; cd tempdir
 C:\&gt; mkdir include
-C:\tempdir\&gt; copy &quot;%MSMPI_INC%&quot; include
-C:\tempdir\&gt; copy &quot;%MSMPI_LIB64%&quot;\msmpi.lib .
-C:\tempdir\&gt; copy %SYSTEMROOT%\System32\msmpi.dll .
+C:\tempdir\&gt; xcopy /E &quot;%MSMPI_INC%&quot; include
+C:\tempdir\&gt; xcopy &quot;%MSMPI_LIB64%&quot;\msmpi.lib .
+C:\tempdir\&gt; xcopy %SYSTEMROOT%\System32\msmpi.dll .
 C:\tempdir\&gt; gendef msmpi.dll
 C:\tempdir\&gt; dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
 </code></pre>
@@ -90,6 +100,7 @@ C:\tempdir\&gt; dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
       that the path to mpi.h is <code>C:\lib\mpi\include\mpi.h</code>. We need to edit some of these files. Leave the
       original files alone and only edit the copy you make. </li>
     <li>
+      (Update 2024.04.30: stdint.h seems to be included by default now. So, this step may not be needed. )
       Open the file <code>mpi.h</code> and add <code>#include &lt;stdint.h&gt;</code>, just before the line</li>
   </ol>
   <pre code class='undefined'>
@@ -97,7 +108,8 @@ typedef __int64 MPI_Aint;
 </pre>
   <p>At this point MPI C/C++ programs are ready to be compiled. For example, if <code>libmsmpi.a</code> is in
     <code>C:\lib\mpi\lib</code> and <code>mpi.h</code> is in <code>C:\lib\mpi\include</code> we can compile
-    <code>my_mpi_program.c</code> by:</p>
+    <code>my_mpi_program.c</code> by:
+  </p>
   <pre lang='undefined'>
 gcc -o out.exe my_mpi_program.c -IC:\lib\mpi\include -LC:\lib\mpi\lib -lmsmpi
 </pre>
@@ -120,30 +132,31 @@ gcc -o out.exe my_mpi_program.c -lmsmpi
     against msmpi. More info at <a href='http://www.mingw.org/wiki/includepathhowto'
       target='_blank'>http://www.mingw.org/wiki/includepathhowto</a> </p>
   <p></p>
-  <h4>Fortran + MPI</h4>
-  <p>Now for Fortran, in the copy of the <code>%MSMPI_INC%</code> you created, do the following:</p>
-  <ol start=''>
-    <li>
-      Rename <code>mpi.f90</code> to <code>mpi.F90</code></li>
-    <li>
-      In both <code>mpi.F90</code> change find and change</li>
-  </ol>
+  <h3>Fortran + MPI</h3>
+
+  <p>Now moving on to finish the configuration for GFortran plus MPI. We need to create the mpi module files so that we can
+    <code>use mpi</code> in our fortran code. To use mpi with <code lang="fortran">include "mpif.h"</code> is also
+    possible but we need to provide some macros for it to work . Here we generate the mpi module file that we can use by
+    adding <code lang="fortran">use mpi</code>and avoid passing extra macros to the compiler
+    everytime.(<code>mpi_f08</code> is not
+    available in this method as far as I know. Another reason to use WSL!)
+  </p>
+  <p>
+    Navigate to your copy of the MPI "include" folder in the mingw shell and run the following command to generate
+    <code>mpi</code> module files for fortran:
+  </p>
   <pre lang='undefined'>
-include &quot;mpifptr.h&quot;
+   gfortran -c -cpp -fallow-invalid-boz -fno-range-check -Ix64 -D_WIN64 -DINT_PTR_KIND()=8  mpi.f90
 </pre>
-  <p>to</p>
+  If you are using PowerShell, you may need to wrap the part with <code>-D INT_PTR_KIND()=8</code> in single quotes like
+  below:
   <pre lang='undefined'>
-include &quot;x64/mpifptr.h&quot;
+   gfortran -c -cpp -fallow-invalid-boz -fno-range-check -Ix64 -D_WIN64 -D'INT_PTR_KIND()=8' -fno-range-check mpi.f90
 </pre>
-  <ol start='3'>
-    <li>
-      Navigate to this folder in the mingw shell and issue the following command to generate <code>mpi.mod</code> file,
-    </li>
-  </ol>
-  <pre lang='undefined'>
-   gfortran -D_WIN64 -D INT_PTR_KIND()=8 -fno-range-check mpi.F90
-</pre>
-  <p>This should create <code>mpi.mod</code> file without any errors. Now MPI with fortran is ready for primetime. One
+  Note that <code>-fallow-invalid-boz</code> was introduced in gfortran v10. If you are using an older version, this
+  will not be recognized. It will work if you remove this flag for older versions.
+  <p>This should create <code>mpi.mod</code> file along with some other module files. It also create <code>mpi.o</code>
+    file that you can delete. It wont be used for anything. Now MPI with gfortran is ready for use. One
     caveat is we have to do <code>use mpi</code> rather than <code>include &quot;mpif.h&quot;</code> in the program. For
     example:</p>
   <pre><code class='language-fortran' >
@@ -184,11 +197,11 @@ gfortran -o out.exe my_mpi_program.F90 -IC:\lib\mpi\include -LC:\lib\mpi\lib -lm
   <p>PS:</p>
   <p>The procedure shown here creates a static library for mpi. We could have used the dynamic libraries as well.
     Instead of making <code>libmsmpi.a</code> we can use <code>msmpi.dll</code> directly by placing it in the library
-    search path. The commands are same as before. With the dynanmic library GCC works A-okay but gfortran does not. The
-    problem is in the linking step. Compiling to .o with gfortran and linking with gcc with -lgfortran works.</p>
+    search path. The commands are same as before. With the dynanmic library GCC works A-okay but gfortran does not.
+    There is some problem during linking. Compiling to .o with gfortran and linking with gcc with -lgfortran works.</p>
   <footer>
     <center>
-      Copyright &copy; 2016 &nbsp; <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M</a>
+      Copyright &copy; 2024 &nbsp; <a href="http://abhilashreddy.com/" title="Abhilash Reddy M">Abhilash Reddy M</a>
     </center>
     <footer>
 
