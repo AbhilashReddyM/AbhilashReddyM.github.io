@@ -4,8 +4,8 @@
 
 body {
   margin: 5% auto;
-  background: #2c2c2c;
-  color: #BBBBBB;
+  background: #1b0b07;
+  color: #aaaaaa;
   font-family: 'Libre Baskerville', serif;
   font-size: 16px;
   line-height: 1.6;
@@ -16,7 +16,7 @@ body {
 
 a {
   border-bottom: 0px solid #9e3c3c;
-  color: #bf7575;
+  color: #c40000;
   text-decoration: none;
 }
 
